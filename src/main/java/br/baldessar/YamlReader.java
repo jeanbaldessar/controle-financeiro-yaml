@@ -25,7 +25,7 @@ public class YamlReader {
         long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
         
     	 // Diretório onde os arquivos YAML estão localizados
-        String directoryPath = ".";
+        String directoryPath = "data";
 
         // Cria um objeto File para o diretório
         File directory = new File(directoryPath);
@@ -92,6 +92,7 @@ public class YamlReader {
 
 	private static List<Saldo> leSaldos(Map<String, Object> obj) {
 		List<Map<String, Object>> saldosYaml = (List<Map<String, Object>>) obj.get("saldos");
+		if(saldosYaml==null) return new ArrayList<Saldo>();
 		saldosYaml = leAgrupamento(saldosYaml, "agrupados");
 		List<Saldo> saldos = new ArrayList<>();
 		for (Map<String, Object> saldoMap : saldosYaml) {
@@ -107,6 +108,7 @@ public class YamlReader {
 	private static List<Lancamento> leLancamentos(Map<String, Object> obj) {
 		// Mapear lançamentos
 		List<Map<String, Object>> lancamentosYaml = (List<Map<String, Object>>) obj.get("lancamentos");
+		if(lancamentosYaml==null) return new ArrayList<Lancamento>();
 		lancamentosYaml = leAgrupamento(lancamentosYaml, "agrupados");
 		List<Lancamento> lancamentos = new ArrayList<>();
 		for (Map<String, Object> lancamentoMap : lancamentosYaml) {
@@ -161,6 +163,7 @@ public class YamlReader {
 	private static List<Conta> leContas(Map<String, Object> obj) {
         @SuppressWarnings("unchecked")
 		List<Map<String, Object>> contasYaml = (List<Map<String, Object>>) obj.get("contas");
+        if(contasYaml==null) return new ArrayList<Conta>();
         contasYaml = leAgrupamento(contasYaml, "agrupados");
         List<Conta> contas = new ArrayList<>();
         for (Map<String, Object> contaMap : contasYaml) {
