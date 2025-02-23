@@ -1,0 +1,36 @@
+contas:
+  - nome: "ativos:jean:nubank:cartao"
+    apelido: "jnubank"
+  - nome: "despesas:mercado"
+    apelido: "mercado"
+  - nome: "despesas:barbeiro"
+    apelido: "barbeiro"
+  - nome: "receita:salario"
+    apelido: "salario"
+
+saldos:
+  - conta: "jnubank"
+    agrupados:
+      - data: "02/01/2025"
+        valor: 100.00
+
+lancamentos:
+  - conciliado: "sim"
+    identificado: "sim"
+    agrupados:
+      - origem: "salario"
+        agrupados:
+          - data: "01/01/2025"
+            agrupados:
+              - valor: 200.00
+                destino: "jnubank"
+      - origem: "jnubank"
+        agrupados:
+          - data: "01/01/2025"
+            agrupados:
+              - valor: 50.00
+                descricao: "Cortei cabelo"
+                destino: "barbeiro"
+              - valor: 50.00
+                descricao: "Comi batata"
+                destino: "mercado"
