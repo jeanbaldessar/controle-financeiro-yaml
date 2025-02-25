@@ -1,9 +1,12 @@
 package br.baldessar;
+
+import java.util.Date;
+
 public class Lancamento {
     private String conciliado;
     private String identificado;
     private String origem;
-    private String data;
+    private Date data;
     private double valor;
     private String descricao;
     private String destino;
@@ -33,11 +36,11 @@ public class Lancamento {
         this.origem = origem;
     }
 
-    public String getData() {
+    public Date getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(Date data) {
         this.data = data;
     }
 

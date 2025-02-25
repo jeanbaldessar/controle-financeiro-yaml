@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,14 +45,19 @@ public class YamlReader {
         // Itera sobre cada arquivo YAML
         for (File file : files) {
             InputStream inputStream = new FileInputStream(file);
-                // Carrega o conteúdo do arquivo YAML
-                Map<String, Object> obj = yaml.load(inputStream);
-                
-                contas.addAll(leContas(obj));
-
-                saldos.addAll(leSaldos(obj));
-                
-                lancamentos.addAll(leLancamentos(obj));
+            try {
+            	
+            	// Carrega o conteúdo do arquivo YAML
+            	Map<String, Object> obj = yaml.load(inputStream);
+            	
+            	contas.addAll(leContas(obj));
+            	
+            	saldos.addAll(leSaldos(obj));
+            	
+            	lancamentos.addAll(leLancamentos(obj));
+            }catch (Exception e) {
+            	throw new RuntimeException("Erro ao ler arquivo "+file.getAbsolutePath(), e);
+			}
                 
         }
         
@@ -98,7 +104,7 @@ public class YamlReader {
 		for (Map<String, Object> saldoMap : saldosYaml) {
 			Saldo saldo = new Saldo();
 		    saldo.setConta((String) saldoMap.get("conta"));
-	        saldo.setData((String) saldoMap.get("data"));
+	        saldo.setData((Date) saldoMap.get("data"));
 	        saldo.setValor((Double) saldoMap.get("valor"));
 	        saldos.add(saldo);
 		}
@@ -116,7 +122,7 @@ public class YamlReader {
             lancamento.setConciliado((String) lancamentoMap.get("conciliado"));
             lancamento.setIdentificado((String) lancamentoMap.get("identificado"));
             lancamento.setOrigem((String) lancamentoMap.get("origem"));
-            lancamento.setData((String) lancamentoMap.get("data"));
+            lancamento.setData((Date) lancamentoMap.get("data"));
             lancamento.setValor((Double) lancamentoMap.get("valor"));
             lancamento.setDescricao((String) lancamentoMap.get("descricao"));
             lancamento.setDestino((String) lancamentoMap.get("destino"));

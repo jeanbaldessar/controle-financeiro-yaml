@@ -1,7 +1,10 @@
 package br.baldessar;
+
+import java.util.Date;
+
 public class Saldo {
     private String conta;
-    private String data;
+    private Date data;
     private double valor;
 
     // Getters e Setters
@@ -13,11 +16,11 @@ public class Saldo {
         this.conta = conta;
     }
 
-    public String getData() {
+    public Date getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(Date data) {
         this.data = data;
     }
 
