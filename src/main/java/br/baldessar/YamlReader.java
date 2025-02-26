@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,27 +20,27 @@ import java.util.TreeMap;
 import org.yaml.snakeyaml.Yaml;
 
 public class YamlReader {
-	
-	
+
+    private static final DecimalFormat decimalFormat = new DecimalFormat("#.00");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
     public static void main(String[] args) throws FileNotFoundException {
-    	long inicio = System.currentTimeMillis();
+        long inicio = System.currentTimeMillis();
         Runtime runtime = Runtime.getRuntime();
         runtime.gc();
         long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
-        
-    	 // Diretório onde os arquivos YAML estão localizados
+
+        // Diretório onde os arquivos YAML estão localizados
         String directoryPath = "data";
 
         // Cria um objeto File para o diretório
         File directory = new File(directoryPath);
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".yaml"));
-     // Ordena os arquivos pelo nome
+        // Ordena os arquivos pelo nome
         Arrays.sort(files, Comparator.comparing(File::getName));
-        
-        
+
         Yaml yaml = new Yaml();
-        
-        
+
         List<Conta> contas = new ArrayList<Conta>();
         List<Saldo> saldos = new ArrayList<Saldo>();
         List<Lancamento> lancamentos = new ArrayList<Lancamento>();
@@ -46,25 +49,25 @@ public class YamlReader {
         for (File file : files) {
             InputStream inputStream = new FileInputStream(file);
             try {
-            	
-            	// Carrega o conteúdo do arquivo YAML
-            	Map<String, Object> obj = yaml.load(inputStream);
-            	
-            	contas.addAll(leContas(obj));
-            	
-            	saldos.addAll(leSaldos(obj));
-            	
-            	lancamentos.addAll(leLancamentos(obj));
-            }catch (Exception e) {
-            	throw new RuntimeException("Erro ao ler arquivo "+file.getAbsolutePath(), e);
-			}
-                
+
+                // Carrega o conteúdo do arquivo YAML
+                Map<String, Object> obj = yaml.load(inputStream);
+
+                contas.addAll(leContas(obj));
+
+                saldos.addAll(leSaldos(obj));
+
+                lancamentos.addAll(leLancamentos(obj));
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao ler arquivo " + file.getAbsolutePath(), e);
+            }
+
         }
-        
+
         System.out.println("Contas:");
         contas.forEach(System.out::println);
         Map<String, Conta> contasPorApelido = transformarListaContasEmMapaPorApelido(contas);
-        
+
         System.out.println("\nSaldos:");
         saldos.forEach(System.out::println);
 
@@ -73,14 +76,14 @@ public class YamlReader {
 
         // Conciliação de saldos
         System.out.println("\nConciliação de saldos:");
-        Conciliador.conciliarSaldos(saldos, lancamentos);
-        
+        conciliarSaldos(saldos, lancamentos);
+
         System.out.println("\nBalanço:");
         Map<String, Double> calcularBalancoContas = calcularBalancoContas(contasPorApelido, lancamentos);
         for (Entry<String, Double> balanco : calcularBalancoContas.entrySet()) {
-			System.out.println(balanco.getKey()+": "+balanco.getValue());
-		}
-        
+            System.out.println(balanco.getKey() + ": " + decimalFormat.format(balanco.getValue()));
+        }
+
         long fim = System.currentTimeMillis();
 
         // Calcula o tempo decorrido
@@ -96,29 +99,29 @@ public class YamlReader {
 
     }
 
-	private static List<Saldo> leSaldos(Map<String, Object> obj) {
-		List<Map<String, Object>> saldosYaml = (List<Map<String, Object>>) obj.get("saldos");
-		if(saldosYaml==null) return new ArrayList<Saldo>();
-		saldosYaml = leAgrupamento(saldosYaml, "agrupados");
-		List<Saldo> saldos = new ArrayList<>();
-		for (Map<String, Object> saldoMap : saldosYaml) {
-			Saldo saldo = new Saldo();
-		    saldo.setConta((String) saldoMap.get("conta"));
-	        saldo.setData((Date) saldoMap.get("data"));
-	        saldo.setValor((Double) saldoMap.get("valor"));
-	        saldos.add(saldo);
-		}
-		return saldos;
-	}
+    private static List<Saldo> leSaldos(Map<String, Object> obj) {
+        List<Map<String, Object>> saldosYaml = (List<Map<String, Object>>) obj.get("saldos");
+        if (saldosYaml == null) return new ArrayList<Saldo>();
+        saldosYaml = leAgrupamento(saldosYaml, "agrupados");
+        List<Saldo> saldos = new ArrayList<>();
+        for (Map<String, Object> saldoMap : saldosYaml) {
+            Saldo saldo = new Saldo();
+            saldo.setConta((String) saldoMap.get("conta"));
+            saldo.setData((Date) saldoMap.get("data"));
+            saldo.setValor((Double) saldoMap.get("valor"));
+            saldos.add(saldo);
+        }
+        return saldos;
+    }
 
-	private static List<Lancamento> leLancamentos(Map<String, Object> obj) {
-		// Mapear lançamentos
-		List<Map<String, Object>> lancamentosYaml = (List<Map<String, Object>>) obj.get("lancamentos");
-		if(lancamentosYaml==null) return new ArrayList<Lancamento>();
-		lancamentosYaml = leAgrupamento(lancamentosYaml, "agrupados");
-		List<Lancamento> lancamentos = new ArrayList<>();
-		for (Map<String, Object> lancamentoMap : lancamentosYaml) {
-		    Lancamento lancamento = new Lancamento();
+    private static List<Lancamento> leLancamentos(Map<String, Object> obj) {
+        // Mapear lançamentos
+        List<Map<String, Object>> lancamentosYaml = (List<Map<String, Object>>) obj.get("lancamentos");
+        if (lancamentosYaml == null) return new ArrayList<Lancamento>();
+        lancamentosYaml = leAgrupamento(lancamentosYaml, "agrupados");
+        List<Lancamento> lancamentos = new ArrayList<>();
+        for (Map<String, Object> lancamentoMap : lancamentosYaml) {
+            Lancamento lancamento = new Lancamento();
             lancamento.setConciliado((String) lancamentoMap.get("conciliado"));
             lancamento.setIdentificado((String) lancamentoMap.get("identificado"));
             lancamento.setOrigem((String) lancamentoMap.get("origem"));
@@ -127,49 +130,48 @@ public class YamlReader {
             lancamento.setDescricao((String) lancamentoMap.get("descricao"));
             lancamento.setDestino((String) lancamentoMap.get("destino"));
             lancamentos.add(lancamento);
-		}
-		return lancamentos;
-	}
-	
-	 public static Map<String, Double> calcularBalancoContas(Map<String, Conta> contasPorApelido, List<Lancamento> lancamentos) {
-	        Map<String, Double> balancoContas = new HashMap<>();
+        }
+        return lancamentos;
+    }
 
-	        // Processa os lançamentos
-	        for (Lancamento lancamento : lancamentos) {
-	            String origem = lancamento.getOrigem();
-	            String destino = lancamento.getDestino();
-	            double valor = lancamento.getValor();
+    public static Map<String, Double> calcularBalancoContas(Map<String, Conta> contasPorApelido, List<Lancamento> lancamentos) {
+        Map<String, Double> balancoContas = new HashMap<>();
 
-	            // Subtrai o valor da conta de origem
-	            balancoContas.put(origem, balancoContas.getOrDefault(origem, 0.0) - valor);
+        // Processa os lançamentos
+        for (Lancamento lancamento : lancamentos) {
+            String origem = lancamento.getOrigem();
+            String destino = lancamento.getDestino();
+            double valor = lancamento.getValor();
 
-	            // Adiciona o valor à conta de destino
-	            balancoContas.put(destino, balancoContas.getOrDefault(destino, 0.0) + valor);
-	        }
+            // Subtrai o valor da conta de origem
+            balancoContas.put(origem, balancoContas.getOrDefault(origem, 0.0) - valor);
 
-	        // Agrupa os saldos por hierarquia de contas
-	        Map<String, Double> balancoAgrupado = new HashMap<>();
-	        for (Map.Entry<String, Double> entry : balancoContas.entrySet()) {
-	            String conta = entry.getKey();
-	            double valor = entry.getValue();
+            // Adiciona o valor à conta de destino
+            balancoContas.put(destino, balancoContas.getOrDefault(destino, 0.0) + valor);
+        }
 
-	            // Adiciona o valor à conta principal e a todas as suas subcontas
-	            String[] partesConta = contasPorApelido.get(conta).getNome().split(":");
-	            String contaAtual = "";
-	            for (String parte : partesConta) {
-	                contaAtual = contaAtual.isEmpty() ? parte : contaAtual + ":" + parte;
-	                balancoAgrupado.put(contaAtual, balancoAgrupado.getOrDefault(contaAtual, 0.0) + valor);
-	            }
-	        }
+        // Agrupa os saldos por hierarquia de contas
+        Map<String, Double> balancoAgrupado = new HashMap<>();
+        for (Map.Entry<String, Double> entry : balancoContas.entrySet()) {
+            String conta = entry.getKey();
+            double valor = entry.getValue();
 
+            // Adiciona o valor à conta principal e a todas as suas subcontas
+            String[] partesConta = contasPorApelido.get(conta).getNome().split(":");
+            String contaAtual = "";
+            for (String parte : partesConta) {
+                contaAtual = contaAtual.isEmpty() ? parte : contaAtual + ":" + parte;
+                balancoAgrupado.put(contaAtual, balancoAgrupado.getOrDefault(contaAtual, 0.0) + valor);
+            }
+        }
 
-	        return new TreeMap<String, Double>(balancoAgrupado);
-	    }
+        return new TreeMap<String, Double>(balancoAgrupado);
+    }
 
-	private static List<Conta> leContas(Map<String, Object> obj) {
+    private static List<Conta> leContas(Map<String, Object> obj) {
         @SuppressWarnings("unchecked")
-		List<Map<String, Object>> contasYaml = (List<Map<String, Object>>) obj.get("contas");
-        if(contasYaml==null) return new ArrayList<Conta>();
+        List<Map<String, Object>> contasYaml = (List<Map<String, Object>>) obj.get("contas");
+        if (contasYaml == null) return new ArrayList<Conta>();
         contasYaml = leAgrupamento(contasYaml, "agrupados");
         List<Conta> contas = new ArrayList<>();
         for (Map<String, Object> contaMap : contasYaml) {
@@ -178,30 +180,30 @@ public class YamlReader {
             conta.setApelido((String) contaMap.get("apelido"));
             contas.add(conta);
         }
-		return contas;
-	}
-	
-	private static List<Map<String, Object>> leAgrupamento(List<Map<String, Object>> desagrupado, String propriedadeAgrupadora) {
-		List<Map<String, Object>> listaDesagrupado = new ArrayList<Map<String, Object>>();
-		for (Map<String, Object> map : desagrupado) {
-			List<Map<String, Object>> agrupados = (List<Map<String, Object>>) map.get(propriedadeAgrupadora);
-			if(agrupados!=null) {
-				agrupados = leAgrupamento(agrupados, propriedadeAgrupadora);
-				for (Entry<String, Object> entradasAtuais : map.entrySet()) {
-					if(!entradasAtuais.getKey().equals(propriedadeAgrupadora))
-						for (Map<String, Object> map2 : agrupados) {
-							map2.put(entradasAtuais.getKey(), entradasAtuais.getValue());
-						}
-				}
-			}else {
-				agrupados = Arrays.asList(map);
-			}
-			listaDesagrupado.addAll(agrupados);
-		}
-		return listaDesagrupado;
-	}
-	
-	public static Map<String, Conta> transformarListaContasEmMapaPorApelido(List<Conta> contas) {
+        return contas;
+    }
+
+    private static List<Map<String, Object>> leAgrupamento(List<Map<String, Object>> desagrupado, String propriedadeAgrupadora) {
+        List<Map<String, Object>> listaDesagrupado = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> map : desagrupado) {
+            List<Map<String, Object>> agrupados = (List<Map<String, Object>>) map.get(propriedadeAgrupadora);
+            if (agrupados != null) {
+                agrupados = leAgrupamento(agrupados, propriedadeAgrupadora);
+                for (Entry<String, Object> entradasAtuais : map.entrySet()) {
+                    if (!entradasAtuais.getKey().equals(propriedadeAgrupadora))
+                        for (Map<String, Object> map2 : agrupados) {
+                            map2.put(entradasAtuais.getKey(), entradasAtuais.getValue());
+                        }
+                }
+            } else {
+                agrupados = Arrays.asList(map);
+            }
+            listaDesagrupado.addAll(agrupados);
+        }
+        return listaDesagrupado;
+    }
+
+    public static Map<String, Conta> transformarListaContasEmMapaPorApelido(List<Conta> contas) {
         Map<String, Conta> mapaContasPorApelido = new HashMap<>();
 
         for (Conta conta : contas) {
@@ -212,5 +214,44 @@ public class YamlReader {
         }
 
         return mapaContasPorApelido;
+    }
+
+    public static void conciliarSaldos(List<Saldo> saldosInformados, List<Lancamento> lancamentos) {
+        // Itera sobre os saldos informados
+    	
+    	Collections.sort(saldosInformados, Comparator.comparing(Saldo::getConta));
+    	
+    	String contaAnterior = "X";
+        for (Saldo saldoInformado : saldosInformados) {
+            String conta = saldoInformado.getConta();
+            double saldoCalculado = calcularSaldoPorConta(conta, lancamentos, saldoInformado.getData());
+
+            if(!contaAnterior.equals(saldoInformado.getConta())) {
+            	System.out.println("\nConciliação para a conta: " + conta);
+            	contaAnterior = saldoInformado.getConta();
+            }
+            System.out.println("  - " + dateFormat.format(saldoInformado.getData())+" - "+(saldoInformado.getValor() == saldoCalculado?"sucesso":"divergência"));
+            System.out.println("    Saldo informado: " + decimalFormat.format(saldoInformado.getValor()));
+            System.out.println("    Saldo calculado: " + decimalFormat.format(saldoCalculado));
+
+        }
+    }
+
+    private static double calcularSaldoPorConta(String conta, List<Lancamento> lancamentos, Date date) {
+        double saldoCalculado = 0.0;
+
+        // Itera sobre os lançamentos para calcular o saldo da conta
+        for (Lancamento lancamento : lancamentos) {
+            if (lancamento.getData().after(date))
+                continue;
+            if (lancamento.getOrigem().equals(conta)) {
+                saldoCalculado -= lancamento.getValor(); // Subtrai o valor do lançamento (saída de dinheiro)
+            }
+            if (lancamento.getDestino().equals(conta)) {
+                saldoCalculado += lancamento.getValor(); // Adiciona o valor do lançamento (entrada de dinheiro)
+            }
+        }
+
+        return saldoCalculado;
     }
 }
