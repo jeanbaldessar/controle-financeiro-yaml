@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -79,8 +81,8 @@ public class YamlReader {
         conciliarSaldos(saldos, lancamentos);
 
         System.out.println("\nBalanço:");
-        Map<String, Double> calcularBalancoContas = calcularBalancoContas(contasPorApelido, lancamentos);
-        for (Entry<String, Double> balanco : calcularBalancoContas.entrySet()) {
+        Map<String, BigDecimal> calcularBalancoContas = calcularBalancoContas(contasPorApelido, lancamentos);
+        for (Entry<String, BigDecimal> balanco : calcularBalancoContas.entrySet()) {
             System.out.println(balanco.getKey() + ": " + decimalFormat.format(balanco.getValue()));
         }
 
@@ -108,7 +110,7 @@ public class YamlReader {
             Saldo saldo = new Saldo();
             saldo.setConta((String) saldoMap.get("conta"));
             saldo.setData((Date) saldoMap.get("data"));
-            saldo.setValor((Double) saldoMap.get("valor"));
+            saldo.setValor(new BigDecimal(saldoMap.get("valor").toString()));
             saldos.add(saldo);
         }
         return saldos;
@@ -126,7 +128,7 @@ public class YamlReader {
             lancamento.setIdentificado((String) lancamentoMap.get("identificado"));
             lancamento.setOrigem((String) lancamentoMap.get("origem"));
             lancamento.setData((Date) lancamentoMap.get("data"));
-            lancamento.setValor((Double) lancamentoMap.get("valor"));
+            lancamento.setValor(new BigDecimal(lancamentoMap.get("valor").toString()));
             lancamento.setDescricao((String) lancamentoMap.get("descricao"));
             lancamento.setDestino((String) lancamentoMap.get("destino"));
             lancamentos.add(lancamento);
@@ -134,38 +136,38 @@ public class YamlReader {
         return lancamentos;
     }
 
-    public static Map<String, Double> calcularBalancoContas(Map<String, Conta> contasPorApelido, List<Lancamento> lancamentos) {
-        Map<String, Double> balancoContas = new HashMap<>();
+    public static Map<String, BigDecimal> calcularBalancoContas(Map<String, Conta> contasPorApelido, List<Lancamento> lancamentos) {
+        Map<String, BigDecimal> balancoContas = new HashMap<>();
 
         // Processa os lançamentos
         for (Lancamento lancamento : lancamentos) {
             String origem = lancamento.getOrigem();
             String destino = lancamento.getDestino();
-            double valor = lancamento.getValor();
+            BigDecimal valor = lancamento.getValor();
 
             // Subtrai o valor da conta de origem
-            balancoContas.put(origem, balancoContas.getOrDefault(origem, 0.0) - valor);
+            balancoContas.put(origem, balancoContas.getOrDefault(origem, BigDecimal.ZERO).subtract(valor));
 
             // Adiciona o valor à conta de destino
-            balancoContas.put(destino, balancoContas.getOrDefault(destino, 0.0) + valor);
+            balancoContas.put(destino, balancoContas.getOrDefault(destino, BigDecimal.ZERO).add(valor));
         }
 
         // Agrupa os saldos por hierarquia de contas
-        Map<String, Double> balancoAgrupado = new HashMap<>();
-        for (Map.Entry<String, Double> entry : balancoContas.entrySet()) {
+        Map<String, BigDecimal> balancoAgrupado = new HashMap<>();
+        for (Map.Entry<String, BigDecimal> entry : balancoContas.entrySet()) {
             String conta = entry.getKey();
-            double valor = entry.getValue();
+            BigDecimal valor = entry.getValue();
 
             // Adiciona o valor à conta principal e a todas as suas subcontas
             String[] partesConta = contasPorApelido.get(conta).getNome().split(":");
             String contaAtual = "";
             for (String parte : partesConta) {
                 contaAtual = contaAtual.isEmpty() ? parte : contaAtual + ":" + parte;
-                balancoAgrupado.put(contaAtual, balancoAgrupado.getOrDefault(contaAtual, 0.0) + valor);
+                balancoAgrupado.put(contaAtual, balancoAgrupado.getOrDefault(contaAtual, BigDecimal.ZERO).add(valor));
             }
         }
 
-        return new TreeMap<String, Double>(balancoAgrupado);
+        return new TreeMap<String, BigDecimal>(balancoAgrupado);
     }
 
     private static List<Conta> leContas(Map<String, Object> obj) {
@@ -224,31 +226,31 @@ public class YamlReader {
     	String contaAnterior = "X";
         for (Saldo saldoInformado : saldosInformados) {
             String conta = saldoInformado.getConta();
-            double saldoCalculado = calcularSaldoPorConta(conta, lancamentos, saldoInformado.getData());
+            BigDecimal saldoCalculado = calcularSaldoPorConta(conta, lancamentos, saldoInformado.getData());
 
             if(!contaAnterior.equals(saldoInformado.getConta())) {
             	System.out.println("\nConciliação para a conta: " + conta);
             	contaAnterior = saldoInformado.getConta();
             }
-            System.out.println("  - " + dateFormat.format(saldoInformado.getData())+" - "+(saldoInformado.getValor() == saldoCalculado?"sucesso":"divergência"));
+            System.out.println("  - " + dateFormat.format(saldoInformado.getData())+" - "+(saldoInformado.getValor().compareTo(saldoCalculado) == 0 ?"sucesso":"divergência"));
             System.out.println("    Saldo informado: " + decimalFormat.format(saldoInformado.getValor()));
             System.out.println("    Saldo calculado: " + decimalFormat.format(saldoCalculado));
 
         }
     }
 
-    private static double calcularSaldoPorConta(String conta, List<Lancamento> lancamentos, Date date) {
-        double saldoCalculado = 0.0;
+    private static BigDecimal calcularSaldoPorConta(String conta, List<Lancamento> lancamentos, Date date) {
+        BigDecimal saldoCalculado = BigDecimal.ZERO;
 
         // Itera sobre os lançamentos para calcular o saldo da conta
         for (Lancamento lancamento : lancamentos) {
             if (lancamento.getData().after(date))
                 continue;
             if (lancamento.getOrigem().equals(conta)) {
-                saldoCalculado -= lancamento.getValor(); // Subtrai o valor do lançamento (saída de dinheiro)
+                saldoCalculado = saldoCalculado.subtract(lancamento.getValor()); // Subtrai o valor do lançamento (saída de dinheiro)
             }
             if (lancamento.getDestino().equals(conta)) {
-                saldoCalculado += lancamento.getValor(); // Adiciona o valor do lançamento (entrada de dinheiro)
+                saldoCalculado = saldoCalculado.add(lancamento.getValor()); // Adiciona o valor do lançamento (entrada de dinheiro)
             }
         }
 

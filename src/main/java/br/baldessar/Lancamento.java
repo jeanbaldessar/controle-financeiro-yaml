@@ -1,5 +1,6 @@
 package br.baldessar;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Lancamento {
@@ -7,7 +8,7 @@ public class Lancamento {
     private String identificado;
     private String origem;
     private Date data;
-    private double valor;
+    private BigDecimal valor;
     private String descricao;
     private String destino;
 
@@ -44,11 +45,11 @@ public class Lancamento {
         this.data = data;
     }
 
-    public double getValor() {
+    public BigDecimal getValor() {
         return valor;
     }
 
-    public void setValor(double valor) {
+    public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
 

@@ -1,11 +1,12 @@
 package br.baldessar;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Saldo {
     private String conta;
     private Date data;
-    private double valor;
+    private BigDecimal valor;
 
     // Getters e Setters
     public String getConta() {
@@ -24,11 +25,11 @@ public class Saldo {
         this.data = data;
     }
 
-    public double getValor() {
+    public BigDecimal getValor() {
         return valor;
     }
 
-    public void setValor(double valor) {
+    public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
 
