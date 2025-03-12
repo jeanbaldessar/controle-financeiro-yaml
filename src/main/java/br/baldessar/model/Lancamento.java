@@ -1,4 +1,4 @@
-package br.baldessar;
+package br.baldessar.model;
 
 import java.math.BigDecimal;
 import java.util.Date;

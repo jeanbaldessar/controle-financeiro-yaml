@@ -1,4 +1,4 @@
-package br.baldessar;
+package br.baldessar.model;
 public class Conta {
     private String nome;
     private String apelido;

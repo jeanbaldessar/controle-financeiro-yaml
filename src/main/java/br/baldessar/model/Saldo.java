@@ -1,7 +1,9 @@
-package br.baldessar;
+package br.baldessar.model;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import br.baldessar.util.LocaleUtils;
 
 public class Saldo {
     private String conta;
@@ -35,6 +37,6 @@ public class Saldo {
 
     @Override
     public String toString() {
-        return "Saldo{conta='" + conta + "', data='" + data + "', valor=" + valor + "}";
+        return "Saldo{conta='" + conta + "', data='" + LocaleUtils.dateFormat.format(data) + "', valor=" + LocaleUtils.decimalFormat.format(valor) + "}";
     }
 }
