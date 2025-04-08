@@ -83,7 +83,10 @@ public class Main {
 		Map<String, BigDecimal> calcularRegistrosContas = listaSaldos.get(1);
         for (Entry<String, BigDecimal> balanco : calcularBalancoContas.entrySet()) {
             BigDecimal bigDecimal = calcularRegistrosContas.get(balanco.getKey());
-			System.out.println(balanco.getKey() + ": " + LocaleUtils.decimalFormat.format(balanco.getValue())+" ("+bigDecimal+")");
+//            +" ("+lpad(bigDecimal.toString(), 3, '0')+")"
+        	String texto = rpad(balanco.getKey().replaceAll("\\w+ *> *", "  ")+ ": ", 15, ' ')  + lpad(LocaleUtils.decimalFormat.format(balanco.getValue()), 10, ' ')+" ("+bigDecimal.intValue()+")";
+        	if(balanco.getValue().doubleValue()!=0.0)
+        		System.out.println(texto);
         }
 
         long fim = System.currentTimeMillis();
@@ -185,14 +188,14 @@ public class Main {
 	        BigDecimal saldoCalculado = calcularSaldoPorConta(conta, lancamentos, saldoInformado.getData());
 	
 	        if(!contaAnterior.equals(saldoInformado.getConta())) {
-	        	buf.append("\nConciliação para a conta: " + conta+"\n");
+//	        	buf.append("\nConciliação para a conta: " + conta+"\n");
 	        	contaAnterior = saldoInformado.getConta();
 	        }
 	        boolean bateu = saldoInformado.getValor().compareTo(saldoCalculado) == 0;
 	        if(bateu) {
-	        	buf.append("  - " + LocaleUtils.dateFormat.format(saldoInformado.getData())+" - sucesso "+LocaleUtils.decimalFormat.format(saldoInformado.getValor())+"\n");
+//	        	buf.append("  - " + LocaleUtils.dateFormat.format(saldoInformado.getData())+" - sucesso "+LocaleUtils.decimalFormat.format(saldoInformado.getValor())+"\n");
 	        }else {
-	        	throw new RuntimeException("Erro ao conciliar saldo: "+saldoInformado+" Calculado: "+LocaleUtils.decimalFormat.format(saldoCalculado));
+//	        	throw new RuntimeException("Erro ao conciliar saldo: "+saldoInformado+" Calculado: "+LocaleUtils.decimalFormat.format(saldoCalculado));
 //	        	buf.append("  - " + dateFormat.format(saldoInformado.getData())+" - "+(bateu ?"sucesso":"divergência de "+decimalFormat.format(saldoInformado.getValor().subtract(saldoCalculado)))+"\n");
 //	        	buf.append("    Saldo informado: " + decimalFormat.format(saldoInformado.getValor())+"\n");
 //	        	buf.append("    Saldo calculado: " + decimalFormat.format(saldoCalculado)+"\n");
@@ -292,5 +295,38 @@ public class Main {
         }
 
         return saldoCalculado;
+    }
+    public static String rpad(String str, int length, char padChar) {
+        if (str == null) {
+            return null;
+        }
+
+        if (str.length() >= length) {
+            return str;
+        }
+
+        StringBuilder paddedString = new StringBuilder(str);
+        while (paddedString.length() < length) {
+            paddedString.append(padChar);
+        }
+
+        return paddedString.toString();
+    }
+    public static String lpad(String str, int length, char padChar) {
+        if (str == null) {
+            return null;
+        }
+
+        if (str.length() >= length) {
+            return str;
+        }
+
+        StringBuilder paddedString = new StringBuilder();
+        while (paddedString.length() < length - str.length()) {
+            paddedString.append(padChar);
+        }
+        paddedString.append(str);
+
+        return paddedString.toString();
     }
 }
